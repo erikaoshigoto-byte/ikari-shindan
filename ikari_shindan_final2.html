@@ -138,6 +138,10 @@ function render() {
 
 function ans(i, val) { answers[i]=val; render(); }
 
+function selectType(key) {
+  renderResult(key, window._tiedScores);
+}
+
 function renderResult(best, scores) {
   const t = types[best];
   const scoreHtml = Object.entries(scores).map(([k,v])=>
@@ -175,14 +179,32 @@ function showResult() {
   } else {
     const scoreHtml = Object.entries(scores).map(([k,v])=>
       `<span class="score-pill${tied.some(([tk])=>tk===k)?' best':''}">${k}: ${v}点</span>`).join('');
-    const btnHtml = tied.map(([k])=>
-      `<button class="q-btn" style="flex:1;padding:12px;font-size:14px;margin-bottom:8px" onclick="renderResult('${k}',${JSON.stringify(scores)})">${types[k].name}<br><span style="font-size:12px;color:#888">${types[k].sub}</span></button>`
-    ).join('');
+    const tiedHtml = tied.map(([k]) => {
+      const t = types[k];
+      return `
+        <div style="margin-bottom:1.5rem">
+          <span class="result-badge">${t.badge}</span>
+          <h2>${t.name}</h2>
+          <p class="result-sub">${t.sub}</p>
+          <div class="result-card"><p>${t.desc}</p></div>
+          <div class="result-card">
+            <p class="approach-title">おすすめアプローチ</p>
+            <ol class="approach-list">${t.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+          </div>
+          <div class="nana"><p>${t.nana}</p></div>
+          <div class="kotoba-box">
+            <p>公式LINEにこの合言葉を送ってください</p>
+            <strong>「${t.kotoba}」</strong>
+          </div>
+        </div>
+        <hr style="border:none;border-top:1px dashed #e0e0e0;margin-bottom:1.5rem">
+      `;
+    }).join('');
     document.getElementById('result-content').innerHTML = `
-      <h2 style="font-size:18px;margin-bottom:0.5rem">同点です！</h2>
-      <p style="font-size:14px;color:#666;margin-bottom:1rem;line-height:1.7">以下のタイプが同点でした。<br>より当てはまると感じる方を選んでください。</p>
+      <p style="font-size:13px;color:#888;margin-bottom:1rem;line-height:1.7">2つのタイプが同点でした。どちらも読んで、より当てはまる方の合言葉をLINEに送ってください。</p>
       <div class="score-row">${scoreHtml}</div>
-      <div style="display:flex;flex-direction:column;gap:8px">${btnHtml}</div>
+      ${tiedHtml}
+      <a class="line-btn" href="https://lin.ee/rC7TGMp">公式LINEを開く →</a>
     `;
     document.getElementById('quiz-view').style.display = 'none';
     document.getElementById('result-view').style.display = 'block';
