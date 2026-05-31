@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>怒り回路セルフチェック診断｜怒り回路解体ワーママ なな</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', sans-serif; background: #f7f6ff; color: #1c1c2e; min-height: 100vh; padding: 2rem 1rem; }
+.wrap { max-width: 600px; margin: 0 auto; }
+h1 { font-size: 20px; font-weight: 600; margin-bottom: 0.5rem; }
+.intro-sub { font-size: 14px; color: #666; line-height: 1.7; margin-bottom: 1.5rem; }
+.progress-bar { height: 4px; background: #e0e0e0; border-radius: 2px; margin-bottom: 1.5rem; }
+.progress-fill { height: 4px; background: #6c63ff; border-radius: 2px; transition: width 0.3s; }
+.block-label { font-size: 12px; font-weight: 600; color: #6c63ff; background: #eeedfe; border-radius: 6px; padding: 3px 10px; display: inline-block; margin-bottom: 0.75rem; }
+.q-card { background: #fff; border: 1px solid #e8e6ff; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
+.q-text { font-size: 14px; line-height: 1.7; margin-bottom: 0.75rem; }
+.q-choices { display: flex; gap: 8px; }
+.q-btn { flex: 1; padding: 9px; border-radius: 8px; border: 1px solid #ddd; background: #f7f7f7; font-size: 14px; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+.q-btn:hover { background: #eeedfe; border-color: #6c63ff; }
+.q-btn.yes { background: #eeedfe; border-color: #6c63ff; color: #534ab7; font-weight: 600; }
+.q-btn.no { background: #f0f0f0; border-color: #bbb; color: #888; }
+.submit-btn { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #6c63ff; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 1rem; font-family: inherit; }
+.submit-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.result { display: none; }
+.result-badge { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px; background: #eeedfe; color: #534ab7; display: inline-block; margin-bottom: 1rem; }
+.result h2 { font-size: 22px; font-weight: 600; margin-bottom: 0.25rem; }
+.result-sub { font-size: 14px; color: #888; margin-bottom: 1rem; }
+.score-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.score-pill { font-size: 12px; padding: 3px 12px; border-radius: 999px; background: #f0f0f0; color: #888; border: 1px solid #e0e0e0; }
+.score-pill.best { background: #eeedfe; color: #534ab7; border-color: #afa9ec; font-weight: 600; }
+.result-card { background: #fff; border: 1px solid #e8e6ff; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+.result-card p { font-size: 14px; line-height: 1.8; color: #333; }
+.approach-title { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 0.5rem; }
+.approach-list { padding-left: 1.2rem; }
+.approach-list li { font-size: 13px; line-height: 1.9; color: #444; }
+.nana { border-left: 3px solid #6c63ff; padding-left: 1rem; margin: 1rem 0; }
+.nana p { font-size: 13px; color: #555; line-height: 1.8; }
+.kotoba-box { background: #eeedfe; border-radius: 12px; padding: 1.25rem; text-align: center; margin: 1rem 0; }
+.kotoba-box p { font-size: 13px; color: #666; margin-bottom: 0.4rem; }
+.kotoba-box strong { font-size: 22px; color: #534ab7; }
+.line-btn { display: block; width: 100%; padding: 13px; border-radius: 12px; background: #06c755; color: #fff; font-size: 15px; font-weight: 600; text-align: center; text-decoration: none; margin-bottom: 0.75rem; font-family: inherit; border: none; cursor: pointer; }
+.retry-btn { width: 100%; padding: 11px; border-radius: 10px; border: 1px solid #ddd; background: #fff; font-size: 14px; color: #888; cursor: pointer; font-family: inherit; }
+.disclaimer { font-size: 11px; color: #aaa; line-height: 1.7; margin-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="quiz-view">
+    <h1>怒り回路セルフチェック診断</h1>
+    <p class="intro-sub">全20問、Yes / No で答えてください。<br>最後にあなたの怒りタイプが自動で表示されます。</p>
+    <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+    <div id="questions"></div>
+    <button class="submit-btn" id="submit-btn" disabled onclick="showResult()">結果を見る →</button>
+  </div>
+
+  <div class="result" id="result-view">
+    <div id="result-content"></div>
+    <button class="retry-btn" onclick="reset()">もう一度やり直す</button>
+    <p class="disclaimer">本診断は医療行為・心理検査ではありません。傾向を示すものであり、個人差があります。深刻な状態（強いうつ・子供への虐待が止まらない等）は医療機関への受診をおすすめします。</p>
+  </div>
+</div>
+
+<script>
+const qs = [
+  {b:'A',t:'子供の泣き声や騒ぎ声に、考える間もなく体が反応することがある'},
+  {b:'A',t:'怒鳴った後、「なんであんなことで」と自分でも驚くことが多い'},
+  {b:'A',t:'保育園・学校の迎え後、家に帰ってすぐに怒鳴ってしまうことがある'},
+  {b:'A',t:'怒鳴っている最中、止めようと思っても止められない感覚がある'},
+  {b:'A',t:'「今日こそ怒鳴らない」と朝決めても、夕方には破れていることが多い'},
+  {b:'B',t:'職場や夫へのストレスが、子供への怒りとして出ることがある'},
+  {b:'B',t:'普段は我慢できているのに、ある日突然爆発することがある'},
+  {b:'B',t:'「なぜ私だけがこんなに頑張らないといけないのか」と思うことがある'},
+  {b:'B',t:'義実家や夫に言えないストレスを抱えていることが多い'},
+  {b:'B',t:'怒鳴るシーンは「育児」なのに、本当の怒りの原因は別にある気がする'},
+  {b:'C',t:'怒鳴った後に、ひどく落ち込んだり泣いたりすることがある'},
+  {b:'C',t:'「ダメなお母さんだ」と自分を責めるサイクルに入ることがある'},
+  {b:'C',t:'子供が寝た後に、昼間のことを後悔して眠れないことがある'},
+  {b:'C',t:'怒鳴ること自体より、怒鳴った後の自己嫌悪の方がつらい'},
+  {b:'C',t:'「謝りたいけどどう謝ればいいか分からない」と思うことがある'},
+  {b:'D',t:'「怒鳴らないように」と意識して、ぐっと我慢していることが多い'},
+  {b:'D',t:'家族の前で無表情になったり、無気力になることがある'},
+  {b:'D',t:'怒りよりも「もう何もかもどうでもいい」という感覚が来ることがある'},
+  {b:'D',t:'自分が何を感じているか、よく分からなくなることがある'},
+  {b:'D',t:'「怒鳴らない代わりに、何かが消えていく」感覚がある'},
+];
+
+const blockLabels = {A:'ブロックA｜発火スピード',B:'ブロックB｜蓄積・転化',C:'ブロックC｜罪悪感・自己嫌悪',D:'ブロックD｜抑圧・虚無'};
+
+const types = {
+  A:{name:'タイプA｜即発火型',sub:'0.3秒着火タイプ',badge:'発火スピード',
+    desc:'怒鳴ろうと思っていないのに怒鳴っている。それは意志が弱いんじゃなくて、回路の発火スピードが速いから。疲れが溜まる夕方・保育園帰り直後・お腹が空いている時間帯に特に発火しやすいパターン。',
+    steps:['「発火しやすい時間帯」を先に特定して、その時間帯だけ対策する','発火中に使える「0.3秒カード」で回路を遮断する','発火後の「5分リセット儀式」で罪悪感ループに入らないようにする'],
+    nana:'私もAタイプ。「考える前に怒鳴ってる」の、よく分かる。発火速度は変えにくいけど、「発火する前の環境」は変えられる。夕方だけ、玄関入ったら10秒何もしない——みたいな小さな実験から始めてみて。',
+    kotoba:'Aタイプ'},
+  B:{name:'タイプB｜蓄積爆発型',sub:'ため込みタイプ',badge:'蓄積・転化',
+    desc:'普段は我慢できているから「私は怒りっぽくない」と思っているかもしれない。でも、ある日突然爆発する。夫へのストレス・義実家へのモヤモヤ・職場の疲れ——全部が子供への爆発に転化されやすい。',
+    steps:['週1回15分の「ストレス棚卸しシート」でため込みを可視化する','「本当の怒りの原因」を書き出して一次感情を特定する','夫や職場への「言えない感情」を別のルートで出す練習'],
+    nana:'「なぜ私だけ」って感覚、本当に消耗するよね。そのモヤモヤを誰にも言えずに抱えてる間、子供が一番近くにいる。だから子供に出てしまう——仕方ない構造だよ。ため込みを可視化するだけでも、爆発の頻度が変わるケースが多い。',
+    kotoba:'Bタイプ'},
+  C:{name:'タイプC｜罪悪感ループ型',sub:'後悔タイプ',badge:'罪悪感・自己嫌悪',
+    desc:'怒鳴ること自体よりも、怒鳴った後の方がつらい。「ダメなお母さんだ」「またやってしまった」子供が寝た後に布団の中で後悔する——そのループが止まらない。',
+    steps:['怒鳴った直後の「5分リセット儀式」でループの入口を閉じる','「ダメな母親」という評価を「愛着がある証拠」にリフレームする','子供への謝り方・修復の言葉かけを先に決めておく'],
+    nana:'怒鳴った後に泣いてしまうってことは——それだけ大切に思ってるってこと。罪悪感は愛の裏返し。でもそのループに入り続けると、お母さんが消耗する一方。まず「5分で切り上げる儀式」を作ることから始めてみて。',
+    kotoba:'Cタイプ'},
+  D:{name:'タイプD｜感情抑圧型',sub:'我慢タイプ',badge:'抑圧・虚無',
+    desc:'怒鳴らないようにと、感情をぐっと抑え込んでいる。外から見ると「穏やかなお母さん」に見えるかもしれない。でも内側では、何かが少しずつ消えていく感覚がある。無表情・無気力・「どうでもいい」——これは燃え尽きのサイン。',
+    steps:['「我慢しすぎサイン」チェックリストで自分の状態を確認する','1日2分の感情ラベリング練習（「今これを感じている」と名前をつける）','感情を「適切に出す」出口を作る（書く・話す・動く）'],
+    nana:'怒鳴らないことが「正解」じゃないって、私も気づくのに時間がかかった。感情を出さないと、消耗する。怒りを感じていい。ただ、出し方を変えていく——そういう練習です。',
+    kotoba:'Dタイプ'},
+};
+
+const answers = new Array(20).fill(null);
+
+function render() {
+  const c = document.getElementById('questions');
+  c.innerHTML = '';
+  qs.forEach((q,i) => {
+    if (i % 5 === 0) {
+      const bl = document.createElement('div');
+      bl.className = 'block-label';
+      bl.textContent = blockLabels[q.b];
+      c.appendChild(bl);
+    }
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.innerHTML = `<p class="q-text">Q${i+1}. ${q.t}</p>
+      <div class="q-choices">
+        <button class="q-btn${answers[i]===true?' yes':''}" onclick="ans(${i},true)">Yes</button>
+        <button class="q-btn${answers[i]===false?' no':''}" onclick="ans(${i},false)">No</button>
+      </div>`;
+    c.appendChild(card);
+  });
+  const filled = answers.filter(a=>a!==null).length;
+  document.getElementById('prog').style.width = (filled/20*100)+'%';
+  document.getElementById('submit-btn').disabled = filled < 20;
+}
+
+function ans(i, val) { answers[i]=val; render(); }
+
+function renderResult(best, scores) {
+  const t = types[best];
+  const scoreHtml = Object.entries(scores).map(([k,v])=>
+    `<span class="score-pill${k===best?' best':''}">${k}: ${v}点</span>`).join('');
+  document.getElementById('result-content').innerHTML = `
+    <span class="result-badge">${t.badge}</span>
+    <h2>${t.name}</h2>
+    <p class="result-sub">${t.sub}</p>
+    <div class="score-row">${scoreHtml}</div>
+    <div class="result-card"><p>${t.desc}</p></div>
+    <div class="result-card">
+      <p class="approach-title">おすすめアプローチ</p>
+      <ol class="approach-list">${t.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+    </div>
+    <div class="nana"><p>${t.nana}</p></div>
+    <div class="kotoba-box">
+      <p>公式LINEにこの合言葉を送ってください</p>
+      <strong>「${t.kotoba}」</strong>
+    </div>
+    <a class="line-btn" href="https://lin.ee/rC7TGMp">公式LINEを開く →</a>
+  `;
+  document.getElementById('quiz-view').style.display = 'none';
+  document.getElementById('result-view').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function showResult() {
+  const scores = {A:0,B:0,C:0,D:0};
+  qs.forEach((q,i)=>{ if(answers[i]===true) scores[q.b]++; });
+  const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const topScore = sorted[0][1];
+  const tied = sorted.filter(([k,v])=>v===topScore);
+  if (tied.length === 1) {
+    renderResult(tied[0][0], scores);
+  } else {
+    const scoreHtml = Object.entries(scores).map(([k,v])=>
+      `<span class="score-pill${tied.some(([tk])=>tk===k)?' best':''}">${k}: ${v}点</span>`).join('');
+    const btnHtml = tied.map(([k])=>
+      `<button class="q-btn" style="flex:1;padding:12px;font-size:14px;margin-bottom:8px" onclick="renderResult('${k}',${JSON.stringify(scores)})">${types[k].name}<br><span style="font-size:12px;color:#888">${types[k].sub}</span></button>`
+    ).join('');
+    document.getElementById('result-content').innerHTML = `
+      <h2 style="font-size:18px;margin-bottom:0.5rem">同点です！</h2>
+      <p style="font-size:14px;color:#666;margin-bottom:1rem;line-height:1.7">以下のタイプが同点でした。<br>より当てはまると感じる方を選んでください。</p>
+      <div class="score-row">${scoreHtml}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">${btnHtml}</div>
+    `;
+    document.getElementById('quiz-view').style.display = 'none';
+    document.getElementById('result-view').style.display = 'block';
+    window.scrollTo(0,0);
+  }
+}
+
+function reset() {
+  answers.fill(null);
+  document.getElementById('quiz-view').style.display = 'block';
+  document.getElementById('result-view').style.display = 'none';
+  render();
+  window.scrollTo(0,0);
+}
+
+render();
+</script>
+</body>
+</html>
